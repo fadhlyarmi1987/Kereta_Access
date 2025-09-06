@@ -23,6 +23,8 @@ class _PesanTiketPageState extends State<PesanTiketPage> {
   String? nikUser;
   String? noTelpUser;
   String? tanggalLahirUser;
+  String? jeniskelamin;
+  int? userId;
 
   @override
   void initState() {
@@ -38,6 +40,8 @@ class _PesanTiketPageState extends State<PesanTiketPage> {
       nikUser = prefs.getString("nik") ?? "";
       noTelpUser = prefs.getString("no_telp") ?? "";
       tanggalLahirUser = prefs.getString("tanggal_lahir") ?? "";
+      jeniskelamin = prefs.getString("jenis_kelamin");
+      userId = prefs.getInt("id");
     });
   }
 
@@ -212,6 +216,8 @@ class _PesanTiketPageState extends State<PesanTiketPage> {
                       Text("NIK: $nikUser", style: const TextStyle(fontSize: 13)),
                       Text("No Telp: $noTelpUser", style: const TextStyle(fontSize: 13)),
                       Text("Tanggal Lahir: $tanggalLahirUser", style: const TextStyle(fontSize: 13)),
+                      Text("Tanggal Lahir: $jeniskelamin", style: const TextStyle(fontSize: 13)),
+                      Text("id: $userId", style: const TextStyle(fontSize: 13)),
                     ],
                   ),
                 ),

@@ -76,7 +76,6 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
     return MapEntry(row, letter);
   }
 
-  /// Fungsi untuk menentukan layout kursi per baris
   List<String> _getSeatColumnsForRow() {
     return ['A', 'B', 'C', 'aisle', 'D', 'E'];
   }
@@ -95,7 +94,6 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // Header penumpang
                   Card(
                     color: Colors.blue.shade50,
                     shape: RoundedRectangleBorder(
@@ -123,7 +121,6 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Pilih gerbong
                   if (carriages.isNotEmpty)
                     SizedBox(
                       height: 42,
@@ -174,7 +171,6 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
 
                   const SizedBox(height: 12),
 
-                  // Legend warna
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -205,9 +201,9 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
                 final carriage = carriages[selectedCarriageIndex];
                 final carriageName = carriage['class'] ?? 'Gerbong';
                 final carriageClass = carriage['class'] ?? 'Gerbong';
-                  final carriageNumber =
-                      selectedCarriageIndex + 1; // urutan gerbong
-                  final carriageLabel = "$carriageClass $carriageNumber";
+                final carriageNumber =
+                    selectedCarriageIndex + 1; // urutan gerbong
+                final carriageLabel = "$carriageClass $carriageNumber";
                 final seatInfo = "$carriageName - $selectedSeatLabel";
 
                 final bool? confirm = await showDialog<bool>(
@@ -247,6 +243,7 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
 
                   Get.back(
                     result: {
+                      "seat_id": selectedSeatId,  // Mengirimkan ID kursi
                       "seat": selectedSeatLabel,
                       "carriage": carriageLabel,
                     },
@@ -265,7 +262,6 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
   Widget _buildSeatLayout(Map<String, dynamic> carriage) {
     final seatsListRaw = (carriage['seats'] as List<dynamic>?) ?? [];
 
-    // mapping kursi per row
     final Map<int, Map<String, Map<String, dynamic>>> rowsMap = {};
     for (final s in seatsListRaw) {
       final seat = Map<String, dynamic>.from(s as Map);
@@ -283,8 +279,6 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
     return ListView(
       children: rowNumbers.map((rowNum) {
         final letterMap = rowsMap[rowNum] ?? {};
-
-        // selalu A–E biar sejajar
         final allCols = ['A', 'B', 'C', 'D', 'E'];
 
         return Padding(
@@ -293,7 +287,6 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: allCols.map((col) {
               if (col == 'D') {
-                // kasih lorong di sebelum D (antara C dan D)
                 return Row(
                   children: [
                     const SizedBox(width: 24),
@@ -315,7 +308,7 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
     }
 
     final seatLabel = seat['seat_number'].toString();
-    final seatId = int.tryParse(seat['seat_id'].toString()) ?? 0;
+    final seatId = int.tryParse(seat['seat_id'].toString()) ?? 0; // Menggunakan `seat_id`
     final isSelected = selectedSeatLabel == seatLabel;
     final isAvailable = seat['status'] != 'booked';
 

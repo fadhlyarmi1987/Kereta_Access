@@ -72,7 +72,7 @@ class AuthController extends GetxController {
         user.value = UserModel.fromJson(data['user']);
         token.value = data['token'] ?? "";
 
-        // simpan token ke SharedPreferences
+        // simpan token dan user_id ke SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString("token", token.value);
         await prefs.setString("role", user.value?.role ?? "user");
@@ -82,12 +82,15 @@ class AuthController extends GetxController {
         await prefs.setString("no_telp", user.value?.noTelp ?? "");
         await prefs.setString("tanggal_lahir", user.value?.tanggalLahir ?? "");
         await prefs.setString("jenis_kelamin", user.value?.jenisKelamin ?? "");
+        await prefs.setInt("id", user.value?.id ?? 0);  // Menyimpan user_id
 
         Get.snackbar("Success", "Login berhasil ✅");
 
         // cek role
         if (user.value?.role == "admin") {
           Get.offAllNamed(AppRoutes.dashboard);
+        } else {
+          Get.offAllNamed(AppRoutes.dashboard); // Halaman untuk user biasa
         }
       } else {
         Get.snackbar("Error", data['message'] ?? "Login gagal");

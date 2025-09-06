@@ -174,6 +174,8 @@ class _HasilPencarianPageState extends State<HasilPencarianPage> {
                                     originStation['departure_time'],
                                 "arrivalTime":
                                     destinationStation['arrival_time'],
+                                "departureDate":
+                                    widget.departureDate, // 🔥 Tambahkan ini
                                 "nama": args["nama"],
                                 "nik": args["nik"],
                                 "jenis_kelamin": args["jenis_kelamin"],
