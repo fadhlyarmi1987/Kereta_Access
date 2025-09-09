@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import '../../../constant/api_constant.dart';
+import '../../../controllers/booking_controller.dart';
 
 class PilihSeatsPage extends StatefulWidget {
   const PilihSeatsPage({super.key});
@@ -12,15 +13,22 @@ class PilihSeatsPage extends StatefulWidget {
 }
 
 class _PilihSeatsPageState extends State<PilihSeatsPage> {
+  final bookingCtrl = Get.put(() => BookingController());
+
   String? selectedSeatLabel;
   int? selectedSeatId;
   bool isLoading = true;
   List<dynamic> carriages = [];
   int selectedCarriageIndex = 0;
+  List<String> takenSeats = [];
 
   @override
   void initState() {
     super.initState();
+    final args = Get.arguments;
+    if (args != null && args["takenSeats"] != null) {
+      takenSeats = List<String>.from(args["takenSeats"]);
+    }
     _fetchSeats();
   }
 
@@ -74,11 +82,6 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
     final letter = (m.group(2) ?? '').toUpperCase();
     if (row == null || letter.isEmpty) return null;
     return MapEntry(row, letter);
-  }
-
-  /// Fungsi untuk menentukan layout kursi per baris
-  List<String> _getSeatColumnsForRow() {
-    return ['A', 'B', 'C', 'aisle', 'D', 'E'];
   }
 
   @override
@@ -191,82 +194,65 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
             ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: selectedSeatLabel != null
-              ? Colors.blue
-              : Colors.grey,
-          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        onPressed: selectedSeatLabel != null
-            ? () async {
-                final carriage = carriages[selectedCarriageIndex];
-                final carriageName = carriage['class'] ?? 'Gerbong';
-                final carriageClass = carriage['class'] ?? 'Gerbong';
-                  final carriageNumber =
-                      selectedCarriageIndex + 1; // urutan gerbong
-                  final carriageLabel = "$carriageClass $carriageNumber";
-                final seatInfo = "$carriageName - $selectedSeatLabel";
+  style: ElevatedButton.styleFrom(
+    backgroundColor:
+        selectedSeatLabel != null ? Colors.blue : Colors.grey,
+    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+  ),
+  onPressed: selectedSeatLabel != null
+      ? () async {
+          final carriage = carriages[selectedCarriageIndex];
+          final carriageClass = carriage['class'] ?? 'Gerbong';
+          final carriageNumber = selectedCarriageIndex + 1;
+          final carriageLabel = "$carriageClass $carriageNumber";
 
-                final bool? confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    title: const Text(
-                      "Konfirmasi Kursi",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    content: Text(
-                      "Anda memilih kursi:\n\n"
-                      "Gerbong: $carriageLabel\n"
-                      "Kursi: $selectedSeatLabel",
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text("Batal"),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: const Text("OK"),
-                      ),
-                    ],
-                  ),
-                );
+          final args = Get.arguments;
+          final bookingCtrl = Get.find<BookingController>();
 
-                if (confirm == true) {
-                  final carriage = carriages[selectedCarriageIndex];
-                  final carriageClass = carriage['class'] ?? 'Gerbong';
-                  final carriageNumber =
-                      selectedCarriageIndex + 1; // urutan gerbong
-                  final carriageLabel = "$carriageClass $carriageNumber";
+          // langsung buat booking
+          final booking = await bookingCtrl.createPendingBooking(
+            tripId: int.tryParse(args["tripId"].toString()) ?? 0,
+            departureDate: args["departureDate"].toString(),
+            seatId: selectedSeatId ?? 0,
+            penumpang: {
+              "name": args["nama"],
+              "nik": args["nik"],
+              "jenis_kelamin": args["jenis_kelamin"],
+              "tanggal_lahir": args["tanggal_lahir"],
+              "seat_id": selectedSeatId ?? 0,
+            },
+          );
 
-                  Get.back(
-                    result: {
-                      "seat": selectedSeatLabel,
-                      "carriage": carriageLabel,
-                      "seat_id": selectedSeatId,
-                    },
-                  );
-                }
-              }
-            : null,
-        child: const Text(
-          "Konfirmasi",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-      ),
+          if (booking != null) {
+            print("✅ Booking sukses: $booking");
+            print("📤 Mengirim result balik...");
+            Get.back(
+              result: {
+                "seat": selectedSeatLabel,
+                "carriage": carriageLabel,
+                "seat_id": selectedSeatId,
+                "booking_id": booking["id"],
+              },
+            );
+          } else {
+            Get.snackbar("Error", "Booking gagal dibuat");
+          }
+        }
+      : null,
+  child: const Text(
+    "Konfirmasi",
+    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+  ),
+),
+
     );
   }
 
   Widget _buildSeatLayout(Map<String, dynamic> carriage) {
     final seatsListRaw = (carriage['seats'] as List<dynamic>?) ?? [];
-
-    // mapping kursi per row
     final Map<int, Map<String, Map<String, dynamic>>> rowsMap = {};
     for (final s in seatsListRaw) {
       final seat = Map<String, dynamic>.from(s as Map);
@@ -284,8 +270,6 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
     return ListView(
       children: rowNumbers.map((rowNum) {
         final letterMap = rowsMap[rowNum] ?? {};
-
-        // selalu A–E biar sejajar
         final allCols = ['A', 'B', 'C', 'D', 'E'];
 
         return Padding(
@@ -294,7 +278,6 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: allCols.map((col) {
               if (col == 'D') {
-                // kasih lorong di sebelum D (antara C dan D)
                 return Row(
                   children: [
                     const SizedBox(width: 24),
@@ -318,7 +301,9 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
     final seatLabel = seat['seat_number'].toString();
     final seatId = int.tryParse(seat['seat_id'].toString()) ?? 0;
     final isSelected = selectedSeatLabel == seatLabel;
-    final isAvailable = seat['status'] != 'booked';
+
+    final isAlreadyTaken = takenSeats.contains(seatLabel);
+    final isAvailable = seat['status'] != 'booked' && !isAlreadyTaken;
 
     return GestureDetector(
       onTap: isAvailable

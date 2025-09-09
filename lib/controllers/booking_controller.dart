@@ -4,70 +4,86 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class BookingController extends GetxController {
-  // URL API endpoint untuk booking (sesuaikan base URL kamu)
-  final String apiUrl = 'http://192.168.0.103:8000/api/pesan';
+  final String baseUrl = 'http://192.168.0.103:8000/api';
 
-  // Fungsi untuk membuat booking
-  Future<void> createBooking(
-    BuildContext context, {
+  // ✅ 1. Buat booking dengan status PENDING (dipanggil di PilihSeatsPage)
+  Future<Map<String, dynamic>?> createPendingBooking({
     required int tripId,
     required String departureDate,
-    required Map<String, dynamic> penumpangUtama,
-    required List<Map<String, dynamic>> tambahan,
+    required int seatId,
+    required Map<String, dynamic> penumpang,
   }) async {
     try {
-      // Body data sesuai struktur request Laravel
+      final url = "$baseUrl/pesan";
       final Map<String, dynamic> data = {
-        'user_id': 1,  
+        'user_id': 1,
         'trip_id': tripId,
         'departure_date': departureDate,
-        'status': 'PENDING', 
-        'seat_id': penumpangUtama['seat_id'], 
-        'passengers': [
-          {
-            'name': penumpangUtama['name'],
-            'nik': penumpangUtama['nik'],
-            'jenis_kelamin': penumpangUtama['jenis_kelamin'],
-            'tanggal_lahir': penumpangUtama['tanggal_lahir'],
-            'seat_id': penumpangUtama['seat_id'], // Menggunakan seat_id dari penumpang utama
-          },
-          // Menambahkan penumpang tambahan
-          ...tambahan.map((penumpang) {
-            return {
-              'name': penumpang['name'],
-              'nik': penumpang['nik'],
-              'jenis_kelamin': penumpang['jenis_kelamin'],
-              'tanggal_lahir': penumpang['tanggal_lahir'],
-              'seat_id': penumpang['seat_id'], // Menggunakan seat_id dari penumpang tambahan
-            };
-          }).toList(),
-        ],
+        'status': 'PENDING',
+        'seat_id': seatId,
+        'passengers': [penumpang],
       };
 
-      // Kirim request POST ke Laravel
       final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer YOUR_API_TOKEN', // Ganti dengan token yang valid jika diperlukan
-        },
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
         body: json.encode(data),
       );
 
+      final resBody = json.decode(response.body);
+      print("🔍 API Response: $resBody");
+
       if (response.statusCode == 201 || response.statusCode == 200) {
-        // Booking berhasil
-        Get.snackbar("Sukses", "Booking berhasil dibuat!");
+        
+
+        // fleksibel: cek ada `booking` atau `data`
+        if (resBody['booking'] != null) {
+          return Map<String, dynamic>.from(resBody['booking']);
+        } else if (resBody['data'] != null) {
+          return Map<String, dynamic>.from(resBody['data']);
+        } else {
+          return Map<String, dynamic>.from(resBody);
+        }
       } else {
-        // Gagal
-        final resBody = json.decode(response.body);
-        print(response.body);
-        Get.snackbar("Error", "Gagal membuat booking: ${resBody['message'] ?? response.body}");
+        Get.snackbar(
+          "Error",
+          "Gagal membuat booking: ${resBody['message'] ?? response.body}",
+        );
+        return null;
       }
     } catch (e) {
       Get.snackbar("Error", "Terjadi kesalahan: $e");
-      print(e);
+      return null;
     }
   }
 
-  
+  // ✅ 2. Update status booking (dipanggil di DetailPenumpangPage)
+  Future<void> updateBookingStatusByUser(int userId, int tripId, String status) async {
+  try {
+    final url = "$baseUrl/bookings/user/$userId/status";
+
+    final response = await http.patch(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "status": status,
+        "trip_id": tripId,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      Get.snackbar("Sukses", "Booking dikonfirmasi!");
+    } else {
+      final resBody = json.decode(response.body);
+      Get.snackbar(
+        "Error",
+        "Gagal update status booking: ${resBody['message'] ?? response.body}",
+      );
+      print(response.body);
+    }
+  } catch (e) {
+    Get.snackbar("Error", "Terjadi kesalahan: $e");
+  }
+}
+
 }
