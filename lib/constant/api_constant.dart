@@ -5,11 +5,12 @@ class ApiConstant {
   // Base URL
   static String get baseUrl {
     if (env == "dev") {
-      return "http://10.187.36.139:8000/api"; // lokal
+      return "http://192.168.0.103:8000/api"; 
       //ip hp 10.187.36.139
       //10.211.122.88 od
+      //192.168.0.103 MKTB GROUP
     } else {
-      return "https://api.domain.com/api"; // server hosting
+      return "https://api.domain.com/api"; 
     }
   }
 
@@ -31,5 +32,5 @@ class ApiConstant {
   static String seats(int trainId) => "$baseUrl/trains/$trainId/seats";
 
   // Booking
-  static String get booking => "$baseUrl/bookings"; // Correct endpoint for booking
+  static String get booking => "$baseUrl/pesan"; 
 }
