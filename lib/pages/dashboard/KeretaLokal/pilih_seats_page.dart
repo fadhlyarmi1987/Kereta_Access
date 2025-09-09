@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../constant/api_constant.dart';
 
 class PilihSeatsPage extends StatefulWidget {
@@ -67,60 +66,6 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
     });
   }
 
-  Future<int?> createBookingPending({
-    required int tripId,
-    required String departureDate,
-    required Map<String, dynamic> penumpangUtama,
-    required List<Map<String, dynamic>> tambahan,
-  }) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getInt("id") ?? 0;
-      final Map<String, dynamic> data = {
-        'user_id': userId,
-        'trip_id': tripId,
-        'departure_date': departureDate,
-        'status': 'pending',
-        'seat_id': penumpangUtama['seat_id'],
-        'passengers': [
-          {
-            'name': penumpangUtama['name'],
-            'nik': penumpangUtama['nik'],
-            'jenis_kelamin': penumpangUtama['jenis_kelamin'],
-            'tanggal_lahir': penumpangUtama['tanggal_lahir'],
-            'seat_id': penumpangUtama['seat_id'],
-          },
-          ...tambahan,
-        ],
-      };
-
-      // ✅ Perbaikan: gunakan ApiConstant.baseUrl agar konsisten
-      final response = await http.post(
-        Uri.parse('${ApiConstant.baseUrl}/pesan'), // << perbaikan
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(data),
-      );
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        final resBody = json.decode(response.body);
-        Get.snackbar("Sukses", "Pilih Kursi Telah Berhasil", backgroundColor: Colors.green);
-        final bookingId = resBody['data']?['id'];
-        return bookingId;
-      } else {
-        final resBody = json.decode(response.body);
-        Get.snackbar(
-          "Error",
-          "Gagal membuat booking: ${resBody['message'] ?? response.body}",
-        );
-        print(response.body);
-      }
-    } catch (e) {
-      Get.snackbar("Error", "Terjadi kesalahan: $e");
-      print(e);
-    }
-    return null;
-  }
-
   MapEntry<int, String>? _parseSeat(String seatNumber) {
     final reg = RegExp(r'^(\d+)([A-Z]+)$', caseSensitive: false);
     final m = reg.firstMatch(seatNumber.trim());
@@ -131,6 +76,7 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
     return MapEntry(row, letter);
   }
 
+  /// Fungsi untuk menentukan layout kursi per baris
   List<String> _getSeatColumnsForRow() {
     return ['A', 'B', 'C', 'aisle', 'D', 'E'];
   }
@@ -140,20 +86,6 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
     final args = Get.arguments;
     final String nama = args?["nama"] ?? "Nama tidak ditemukan";
     final String nik = args?["nik"] ?? "NIK tidak ditemukan";
-    final int tripId = int.tryParse(args?["tripId"].toString() ?? "0") ?? 0;
-    final String departureDate = args?["departureDate"]?.toString() ?? "-";
-    final String tanggalLahir = args?["tanggal_lahir"]?.toString() ?? "-";
-    final String jenisKelamin = args["jenis_kelamin"]?.toString() ?? "-";
-
-    final Map<String, dynamic> penumpangUtama = {
-      "name": nama,
-      "nik": nik,
-      "jenis_kelamin": jenisKelamin,
-      "tanggal_lahir": tanggalLahir,
-      "seat_id": selectedSeatId,
-    }; // << perbaikan
-    final List<Map<String, dynamic>> tambahan =
-        []; // << perbaikan (sementara kosong)
 
     return Scaffold(
       appBar: AppBar(title: const Text("Pilih Kursi")),
@@ -163,6 +95,7 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
+                  // Header penumpang
                   Card(
                     color: Colors.blue.shade50,
                     shape: RoundedRectangleBorder(
@@ -174,7 +107,7 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "$nama",
+                            "Nama Penumpang: $nama",
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -184,25 +117,13 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
                             "NIK: $nik",
                             style: const TextStyle(fontSize: 14),
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            "Trip ID: $tripId",
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                          Text(
-                            "Tanggal Keberangkatan: $departureDate",
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                          Text(
-                            "Tanggal Lahir: $jenisKelamin",
-                            style: const TextStyle(fontSize: 14),
-                          ),
                         ],
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 16),
+
+                  // Pilih gerbong
                   if (carriages.isNotEmpty)
                     SizedBox(
                       height: 42,
@@ -236,18 +157,24 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
                         },
                       ),
                     ),
+
                   const SizedBox(height: 20),
                   const Text(
                     "Pilih Kursi",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
+
+                  // Kursi
                   Expanded(
                     child: carriages.isEmpty
                         ? const Center(child: Text("Tidak ada data gerbong."))
                         : _buildSeatLayout(carriages[selectedCarriageIndex]),
                   ),
+
                   const SizedBox(height: 12),
+
+                  // Legend warna
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -258,7 +185,7 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
                       _legendBox(color: Colors.grey, label: 'Terisi'),
                     ],
                   ),
-                  const SizedBox(height: 70),
+                  const SizedBox(height: 70), // space for confirm button
                 ],
               ),
             ),
@@ -277,8 +204,11 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
             ? () async {
                 final carriage = carriages[selectedCarriageIndex];
                 final carriageName = carriage['class'] ?? 'Gerbong';
-                final carriageNumber = selectedCarriageIndex + 1;
-                final carriageLabel = "$carriageName $carriageNumber";
+                final carriageClass = carriage['class'] ?? 'Gerbong';
+                  final carriageNumber =
+                      selectedCarriageIndex + 1; // urutan gerbong
+                  final carriageLabel = "$carriageClass $carriageNumber";
+                final seatInfo = "$carriageName - $selectedSeatLabel";
 
                 final bool? confirm = await showDialog<bool>(
                   context: context,
@@ -309,27 +239,19 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
                 );
 
                 if (confirm == true) {
-                  // ✅ Perbaikan: panggil createBookingPending dengan data dari arguments
-                  if (selectedSeatId == null) {
-                    Get.snackbar("Error", "Harap pilih kursi terlebih dahulu");
-                    return;
-                  }
-                  final bookingId = await createBookingPending(
-                    tripId: tripId,
-                    departureDate: departureDate,
-                    penumpangUtama: penumpangUtama,
-                    tambahan: tambahan,
-                  );
+                  final carriage = carriages[selectedCarriageIndex];
+                  final carriageClass = carriage['class'] ?? 'Gerbong';
+                  final carriageNumber =
+                      selectedCarriageIndex + 1; // urutan gerbong
+                  final carriageLabel = "$carriageClass $carriageNumber";
 
-                  if (bookingId != null) {
-                    Get.back(
-                      result: {
-                        "seat_id": selectedSeatId,
-                        "seat": selectedSeatLabel,
-                        "carriage": carriageLabel,
-                      },
-                    );
-                  }
+                  Get.back(
+                    result: {
+                      "seat": selectedSeatLabel,
+                      "carriage": carriageLabel,
+                      "seat_id": selectedSeatId,
+                    },
+                  );
                 }
               }
             : null,
@@ -343,8 +265,9 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
 
   Widget _buildSeatLayout(Map<String, dynamic> carriage) {
     final seatsListRaw = (carriage['seats'] as List<dynamic>?) ?? [];
-    final Map<int, Map<String, Map<String, dynamic>>> rowsMap = {};
 
+    // mapping kursi per row
+    final Map<int, Map<String, Map<String, dynamic>>> rowsMap = {};
     for (final s in seatsListRaw) {
       final seat = Map<String, dynamic>.from(s as Map);
       final seatNumber = (seat['seat_number'] ?? '').toString();
@@ -361,6 +284,8 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
     return ListView(
       children: rowNumbers.map((rowNum) {
         final letterMap = rowsMap[rowNum] ?? {};
+
+        // selalu A–E biar sejajar
         final allCols = ['A', 'B', 'C', 'D', 'E'];
 
         return Padding(
@@ -369,6 +294,7 @@ class _PilihSeatsPageState extends State<PilihSeatsPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: allCols.map((col) {
               if (col == 'D') {
+                // kasih lorong di sebelum D (antara C dan D)
                 return Row(
                   children: [
                     const SizedBox(width: 24),

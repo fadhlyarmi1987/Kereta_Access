@@ -22,8 +22,6 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
   String? carriageUtama;
   int? seatId;
 
-  List<Map<String, dynamic>> penumpangTambahan = [];
-
   @override
   void initState() {
     super.initState();
@@ -40,49 +38,12 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
     });
   }
 
-  void _tambahPenumpangCard() {
-    if (penumpangTambahan.length >= 3) {
-      Get.snackbar("Batas Tercapai", "Maksimal 3 penumpang tambahan");
-      return;
-    }
-    setState(() {
-      penumpangTambahan.add({
-        "nama": TextEditingController(),
-        "nik": TextEditingController(),
-        "no_telp": TextEditingController(),
-        "jenis_kelamin": "Laki-laki", // default
-        "tanggal_lahir": TextEditingController(),
-        "seat": null,
-        "carriage": null,
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    for (var p in penumpangTambahan) {
-      (p["nama"] as TextEditingController).dispose();
-      (p["nik"] as TextEditingController).dispose();
-      (p["no_telp"] as TextEditingController).dispose();
-    }
-    super.dispose();
-  }
-
   Future<void> _konfirmasiData(
     BuildContext context,
     Map<String, dynamic> penumpang, {
     bool tambahan = false,
     int? index,
   }) async {
-    // ambil data penumpang tergantung utama / tambahan
-    final isTambahan = tambahan;
-    final namaPenumpang = isTambahan ? penumpang['nama'] : nama;
-    final nikPenumpang = isTambahan ? penumpang['nik'] : nik;
-    final tglLahirPenumpang = isTambahan
-        ? penumpang['tanggal_lahir']
-        : tanggalLahir;
-    final jkPenumpang = isTambahan ? penumpang['jenis_kelamin'] : jenisKelamin;
-
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -105,7 +66,14 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
               children: [
                 const Icon(Icons.person, color: Colors.grey),
                 const SizedBox(width: 8),
-                Expanded(child: Text(namaPenumpang?.toString() ?? "-")),
+                Expanded(
+                  child: Text(
+                    penumpang['nama']?.isNotEmpty == true
+                        ? penumpang['nama']!
+                        : "-",
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -113,65 +81,35 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
               children: [
                 const Icon(Icons.badge, color: Colors.grey),
                 const SizedBox(width: 8),
-                Expanded(child: Text(nikPenumpang?.toString() ?? "-")),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.calendar_today, color: Colors.grey),
-                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "Tanggal Lahir: ${tglLahirPenumpang?.toString() ?? '-'}",
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.people, color: Colors.grey),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    "Jenis Kelamin: ${jkPenumpang?.toString() ?? '-'}",
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.train, color: Colors.grey),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text("Trip ID: ${penumpang['trip_id'] ?? '-'}"),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.calendar_today, color: Colors.grey),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    "Tanggal Keberangkatan: ${penumpang['departure_date'] ?? '-'}",
+                    penumpang['nik']?.isNotEmpty == true
+                        ? penumpang['nik']!
+                        : "-",
+                    style: const TextStyle(fontSize: 16),
                   ),
                 ),
               ],
             ),
           ],
         ),
+        actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         actions: [
-          TextButton(
+          TextButton.icon(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text("Batal", style: TextStyle(color: Colors.red)),
+            icon: const Icon(Icons.close, color: Colors.red),
+            label: const Text("Batal"),
           ),
-          ElevatedButton(
+          ElevatedButton.icon(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text("Sesuai"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            icon: const Icon(Icons.check_circle, color: Colors.white),
+            label: const Text("Sesuai"),
           ),
         ],
       ),
@@ -182,27 +120,17 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
       final result = await Get.toNamed(
         AppRoutes.pilihseats,
         arguments: {
-          "nama": namaPenumpang,
-          "nik": nikPenumpang,
-          "tanggal_lahir": tglLahirPenumpang,
-          "jenis_kelamin": jkPenumpang,
+          "nama": penumpang['nama'],
+          "nik": penumpang['nik'],
           "trainId": args["trainId"],
-          "tripId": args["tripId"],
-          "departureDate": args["departureDate"],
         },
       );
 
       if (result != null && result is Map) {
         setState(() {
-          if (isTambahan && index != null) {
-            penumpangTambahan[index]["seat"] = result['seat'];
-            penumpangTambahan[index]["carriage"] = result['carriage'];
-            penumpangTambahan[index]["seat_id"] = result['seat_id'];
-          } else {
-            seatUtama = result['seat'];
-            carriageUtama = result['carriage'];
-            seatId = result['seat_id'];
-          }
+          seatUtama = result['seat'];
+          carriageUtama = result['carriage'];
+          seatId = result['seat_id']; // Menyimpan ID kursi
         });
       }
     }
@@ -216,319 +144,119 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
       appBar: AppBar(
         title: const Text("Detail Penumpang"),
         backgroundColor: Colors.blueAccent,
+        elevation: 1,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                // Info Trip
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.train, color: Colors.blue),
-                    title: Text(args["trainName"] ?? ""),
-                    subtitle: Text(
-                      "${args['originStation']} → ${args['destinationStation']}\n"
-                      "Berangkat: ${args['departureTime']} | "
-                      "Tiba: ${args['arrivalTime']}",
-                    ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Info Trip
+            Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListTile(
+                leading: const Icon(Icons.train, color: Colors.blue, size: 32),
+                title: Text(
+                  args["trainName"] ?? "",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
                   ),
                 ),
-                const SizedBox(height: 12),
-
-                const Text(
-                  "Penumpang Utama",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                subtitle: Text(
+                  "${args['originStation']} → ${args['destinationStation']}\n"
+                  "Berangkat: ${args['departureTime']} | "
+                  "Tiba: ${args['arrivalTime']}",
                 ),
-                Card(
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: Colors.green,
-                      child: Icon(Icons.person, color: Colors.white),
-                    ),
-                    title: Text(nama ?? "-"),
-                    subtitle: Text(
-                      "NIK: $nik\n"
-                      "Jenis Kelamin: $jenisKelamin\n"
-                      "Tanggal Lahir: $tanggalLahir\n"
-                      "Gerbong: ${carriageUtama ?? '-'} | Kursi: ${seatUtama ?? '-'} | ID Kursi: ${seatId ?? '-'}",
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.event_seat, color: Colors.blue),
-                      onPressed: () {
-                        final args = Get.arguments;
-                        _konfirmasiData(context, {
-                          "nama": nama ?? "",
-                          "nik": nik ?? "",
-                          "trip_id": args["tripId"].toString(),
-                          "departure_date": args["departureDate"].toString(),
-                          "tanggal_lahir": tanggalLahir ?? "",
-                        }, tambahan: false);
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Penumpang Tambahan
-                ...penumpangTambahan.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final p = entry.value;
-
-                  return Card(
-                    elevation: 4,
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.person,
-                                color: Colors.blueAccent,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                "Penumpang Tambahan ${index + 1}",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Divider(),
-                          TextField(
-                            controller: p["nama"],
-                            decoration: const InputDecoration(
-                              prefixIcon: Icon(Icons.person_outline),
-                              labelText: "Nama Lengkap",
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: p["nik"],
-                            decoration: const InputDecoration(
-                              prefixIcon: Icon(Icons.badge_outlined),
-                              labelText: "NIK",
-                            ),
-                            keyboardType: TextInputType.number,
-                          ),
-                          const SizedBox(height: 8),
-                          // Jenis Kelamin
-                          Row(
-                            children: [
-                              const Icon(Icons.male, color: Colors.blueAccent),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      "Jenis Kelamin",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: RadioListTile<String>(
-                                            title: const Text("Laki-laki"),
-                                            value: "Laki-laki",
-                                            groupValue: p["jenis_kelamin"],
-                                            onChanged: (value) {
-                                              setState(() {
-                                                p["jenis_kelamin"] = value!;
-                                              });
-                                            },
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: RadioListTile<String>(
-                                            title: const Text("Perempuan"),
-                                            value: "Perempuan",
-                                            groupValue: p["jenis_kelamin"],
-                                            onChanged: (value) {
-                                              setState(() {
-                                                p["jenis_kelamin"] = value!;
-                                              });
-                                            },
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Tanggal Lahir
-                          TextField(
-                            controller: p["tanggal_lahir"],
-                            readOnly: true,
-                            decoration: InputDecoration(
-                              prefixIcon: const Icon(Icons.calendar_today),
-                              labelText: "Tanggal Lahir",
-                              filled: true,
-                              fillColor: Colors.grey.shade100,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onTap: () async {
-                              DateTime? picked = await showDatePicker(
-                                context: context,
-                                initialDate: DateTime.now(),
-                                firstDate: DateTime(1900),
-                                lastDate: DateTime.now(),
-                              );
-                              if (picked != null) {
-                                setState(() {
-                                  p["tanggal_lahir"].text =
-                                      "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-                                });
-                              }
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          const SizedBox(height: 12),
-                          Text(
-                            "Gerbong: ${p['carriage'] ?? '-'} | Kursi: ${p['seat'] ?? '-'} | ID Kursi: ${p['seat_id'] ?? '-'}",
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              TextButton.icon(
-                                onPressed: () {
-                                  setState(() {
-                                    penumpangTambahan.removeAt(index);
-                                  });
-                                },
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
-                                ),
-                                label: const Text(
-                                  "Hapus",
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ),
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  _konfirmasiData(
-                                    context,
-                                    {
-                                      "nama": p["nama"].text,
-                                      "nik": p["nik"].text,
-                                      "trip_id": args["tripId"].toString(),
-                                      "departure_date": args["departureDate"]
-                                          .toString(),
-                                      "tanggal_lahir": p["tanggal_lahir"].text,
-                                      "jenis_kelamin": p["jenis_kelamin"],
-                                    },
-                                    tambahan: true,
-                                    index: index,
-                                  );
-                                },
-                                icon: const Icon(
-                                  Icons.event_seat,
-                                  color: Colors.white,
-                                ),
-                                label: const Text("Pilih Kursi"),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: penumpangTambahan.length >= 3
-                      ? null
-                      : _tambahPenumpangCard,
-                  icon: const Icon(Icons.add),
-                  label: const Text("Tambah Penumpang"),
-                ),
-              ],
-            ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  minimumSize: const Size(double.infinity, 50),
-                ),
-                icon: const Icon(Icons.check, color: Colors.white),
-                label: const Text(
-                  "Booking",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-                onPressed: () {
-                  final bookingCtrl = Get.put(BookingController());
-                  final rawDate = Get.arguments["departureDate"];
-
-                  if (rawDate == null || rawDate.toString().isEmpty) {
-                    Get.snackbar(
-                      "Error",
-                      "Tanggal keberangkatan tidak tersedia",
-                    );
-                    return;
-                  }
-
-                  final formattedDate = DateFormat(
-                    'yyyy-MM-dd',
-                  ).format(DateTime.parse(rawDate.toString()));
-
-                  final tambahan = penumpangTambahan.map((p) {
-                    return {
-                      "name": p["nama"].text.isNotEmpty ? p["nama"].text : "-",
-                      "nik": p["nik"].text.isNotEmpty ? p["nik"].text : "-",
-                      "jenis_kelamin":
-                          (p["jenis_kelamin"] == "Laki-laki" ||
-                              p["jenis_kelamin"] == "Perempuan")
-                          ? p["jenis_kelamin"]
-                          : "Laki-laki", // default biar tidak error constraint
-                      "tanggal_lahir": p["tanggal_lahir"].text.isNotEmpty
-                          ? p["tanggal_lahir"].text
-                          : formattedDate, // fallback kalau kosong
-                      "seat_id": p["seat_id"] ?? "-",
-                      "trip_id": int.parse(Get.arguments["tripId"].toString()),
-                      "departure_date": formattedDate,
-                    };
-                  }).toList();
-
-                  bookingCtrl.createBooking(
-                    context,
-                    tripId: int.parse(Get.arguments["tripId"].toString()),
-                    departureDate: formattedDate,
-                    penumpangUtama: {
-                      "name": nama ?? "-",
-                      "nik": nik ?? "-",
-                      "jenis_kelamin": jenisKelamin ?? "-",
-                      "tanggal_lahir": tanggalLahir ?? "-",
-                      "seat_id": seatId ?? "-",
-                    },
-                    tambahan: tambahan,
-                  );
-                },
               ),
             ),
-          ),
-        ],
+
+            const SizedBox(height: 12),
+            const Text(
+              "Penumpang",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const Divider(),
+
+            // Penumpang utama
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Colors.green,
+                  child: Icon(Icons.person, color: Colors.white),
+                ),
+                title: Text(
+                  nama ?? "-",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  "NIK: $nik\n"
+                  "Jenis Kelamin: $jenisKelamin\n"
+                  "Tanggal Lahir: $tanggalLahir\n"
+                  "Gerbong: ${carriageUtama ?? '-'} | Kursi: ${seatUtama ?? '-'} | ID Kursi: ${seatId ?? '-'}",
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.event_seat, color: Colors.blue),
+                  onPressed: () {
+                    _konfirmasiData(context, {
+                      "nama": nama ?? "",
+                      "nik": nik ?? "",
+                    }, tambahan: false);
+                  },
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: const Icon(Icons.check, color: Colors.white),
+              label: const Text(
+                "Booking",
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+              onPressed: () {
+                final bookingCtrl = Get.put(BookingController());
+                final rawDate = Get.arguments["departureDate"];
+
+                if (rawDate == null || rawDate.toString().isEmpty) {
+                  Get.snackbar("Error", "Tanggal keberangkatan tidak tersedia");
+                  return;
+                }
+
+                final formattedDate = DateFormat(
+                  'yyyy-MM-dd',
+                ).format(DateTime.parse(rawDate.toString()));
+                bookingCtrl.createBooking(
+                  context,
+                  tripId: int.parse(Get.arguments["tripId"].toString()),
+                  departureDate: formattedDate,
+                  penumpangUtama: {
+                    "name": nama ?? "-",
+                    "nik": nik ?? "-",
+                    "jenis_kelamin": jenisKelamin ?? "-",
+                    "tanggal_lahir": tanggalLahir ?? "-",
+                    "seat_id": seatId ?? "-",
+                  },
+                  tambahan: [], // Daftar penumpang tambahan bisa ditambahkan jika ada
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
