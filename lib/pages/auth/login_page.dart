@@ -13,25 +13,48 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade100,
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
           child: SingleChildScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // Logo / Icon
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: Colors.blue.shade100,
+                  child: const Icon(
+                    Icons.lock_outline,
+                    size: 40,
+                    color: Colors.blueAccent,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Judul
                 const Text(
                   "Login Admin",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 40),
 
                 // Email
                 TextField(
                   controller: emailController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.email_outlined),
                     labelText: "Email",
-                    border: OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -41,8 +64,13 @@ class LoginPage extends StatelessWidget {
                       controller: passwordController,
                       obscureText: isPasswordHidden.value,
                       decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.lock_outline),
                         labelText: "Password",
-                        border: const OutlineInputBorder(),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         suffixIcon: IconButton(
                           icon: Icon(
                             isPasswordHidden.value
@@ -59,31 +87,58 @@ class LoginPage extends StatelessWidget {
                 const SizedBox(height: 30),
 
                 // Tombol Login
-                Obx(() => ElevatedButton(
-                      onPressed: authController.isLoading.value
-                          ? null
-                          : () {
-                              authController.login(
-                                emailController.text.trim(),
-                                passwordController.text.trim(),
-                              );
-                            },
-                      child: authController.isLoading.value
-                          ? const CircularProgressIndicator(
-                              color: Colors.white,
-                            )
-                          : const Text("Login"),
+                Obx(() => SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 3,
+                        ),
+                        onPressed: authController.isLoading.value
+                            ? null
+                            : () {
+                                authController.login(
+                                  emailController.text.trim(),
+                                  passwordController.text.trim(),
+                                );
+                              },
+                        child: authController.isLoading.value
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : const Text(
+                                "Login",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
                     )),
 
                 const SizedBox(height: 20),
 
                 // Pindah ke register
-                TextButton(
-                  onPressed: () {
-                    Get.toNamed("/register");
-                  },
-                  child: const Text("Belum punya akun? Register"),
-                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Belum punya akun? "),
+                    GestureDetector(
+                      onTap: () => Get.toNamed("/register"),
+                      child: Text(
+                        "Register",
+                        style: TextStyle(
+                          color: Colors.blueAccent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
               ],
             ),
           ),

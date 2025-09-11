@@ -3,9 +3,10 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-class BookingController extends GetxController {
-  final String baseUrl = 'http://192.168.0.103:8000/api';
+import '../constant/api_constant.dart';
 
+// ✅ Booking Controller
+class BookingController extends GetxController {
   // ✅ 1. Buat booking dengan status PENDING (dipanggil di PilihSeatsPage)
   Future<Map<String, dynamic>?> createPendingBooking({
     required int tripId,
@@ -14,7 +15,7 @@ class BookingController extends GetxController {
     required Map<String, dynamic> penumpang,
   }) async {
     try {
-      final url = "$baseUrl/pesan";
+      final url = ApiConstant.booking; // ✅ panggil dari ApiConstant
       final Map<String, dynamic> data = {
         'user_id': 1,
         'trip_id': tripId,
@@ -34,8 +35,6 @@ class BookingController extends GetxController {
       print("🔍 API Response: $resBody");
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        
-
         // fleksibel: cek ada `booking` atau `data`
         if (resBody['booking'] != null) {
           return Map<String, dynamic>.from(resBody['booking']);
@@ -59,31 +58,30 @@ class BookingController extends GetxController {
 
   // ✅ 2. Update status booking (dipanggil di DetailPenumpangPage)
   Future<void> updateBookingStatusByUser(int userId, int tripId, String status) async {
-  try {
-    final url = "$baseUrl/bookings/user/$userId/status";
+    try {
+      final url = "${ApiConstant.baseUrl}/bookings/user/$userId/status"; // ✅ pakai baseUrl
 
-    final response = await http.patch(
-      Uri.parse(url),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        "status": status,
-        "trip_id": tripId,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      Get.snackbar("Sukses", "Booking dikonfirmasi!");
-    } else {
-      final resBody = json.decode(response.body);
-      Get.snackbar(
-        "Error",
-        "Gagal update status booking: ${resBody['message'] ?? response.body}",
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "status": status,
+          "trip_id": tripId,
+        }),
       );
-      print(response.body);
-    }
-  } catch (e) {
-    Get.snackbar("Error", "Terjadi kesalahan: $e");
-  }
-}
 
+      if (response.statusCode == 200) {
+        Get.snackbar("Sukses", "Booking dikonfirmasi!");
+      } else {
+        final resBody = json.decode(response.body);
+        Get.snackbar(
+          "Error",
+          "Gagal update status booking: ${resBody['message'] ?? response.body}",
+        );
+        print(response.body);
+      }
+    } catch (e) {
+      Get.snackbar("Error", "Terjadi kesalahan: $e");
+    }
+  }
 }

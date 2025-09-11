@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../../controllers/station/stations_controller.dart';
-
+import '../../../routes/route.dart';
 
 class PesanTiketAntarKotaPage extends StatefulWidget {
   const PesanTiketAntarKotaPage({super.key});
@@ -15,11 +14,17 @@ class PesanTiketAntarKotaPage extends StatefulWidget {
 class _PesanTiketAntarKotaPageState extends State<PesanTiketAntarKotaPage> {
   final StationController stationController = Get.put(StationController());
 
-  String? selectedAsal;
-  String? selectedTujuan;
+  Map<String, dynamic>? selectedAsal;
+  Map<String, dynamic>? selectedTujuan;
   DateTime? selectedDate;
+
   String? namaUser;
   String? emailUser;
+  String? nikUser;
+  String? noTelpUser;
+  String? tanggalLahirUser;
+  String? jeniskelamin;
+  int? userId;
 
   @override
   void initState() {
@@ -32,6 +37,11 @@ class _PesanTiketAntarKotaPageState extends State<PesanTiketAntarKotaPage> {
     setState(() {
       namaUser = prefs.getString("name") ?? "Guest";
       emailUser = prefs.getString("email") ?? "";
+      nikUser = prefs.getString("nik") ?? "";
+      noTelpUser = prefs.getString("no_telp") ?? "";
+      tanggalLahirUser = prefs.getString("tanggal_lahir") ?? "";
+      jeniskelamin = prefs.getString("jenis_kelamin");
+      userId = prefs.getInt("id");
     });
   }
 
@@ -49,101 +59,209 @@ class _PesanTiketAntarKotaPageState extends State<PesanTiketAntarKotaPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Pesan Tiket Antar Kota")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Obx(() {
-          if (stationController.isLoading.value) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          return ListView(
+  Future<void> _selectStation(String type) async {
+    final result = await Get.toNamed(AppRoutes.pilihstasiun);
+    if (result != null) {
+      setState(() {
+        if (type == "Asal") {
+          selectedAsal = result;
+        } else {
+          selectedTujuan = result;
+        }
+      });
+    }
+  }
+
+  Widget _buildStationSelector({
+    required String label,
+    required String hint,
+    required IconData icon,
+    required Map<String, dynamic>? selectedStation,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade400),
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              )
+            ],
+          ),
+          child: Row(
             children: [
-              // Dropdown Stasiun Asal
-              DropdownButtonFormField<String>(
-                value: selectedAsal,
-                decoration: const InputDecoration(
-                  labelText: "Stasiun Asal",
-                  border: OutlineInputBorder(),
-                ),
-                items: stationController.stations
-                    .map((station) => DropdownMenuItem<String>(
-                          value: station["id"].toString(),
-                          child: Text(station["name"]),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  setState(() => selectedAsal = value);
-                },
-              ),
-              const SizedBox(height: 16),
-              // Dropdown Stasiun Tujuan
-              DropdownButtonFormField<String>(
-                value: selectedTujuan,
-                decoration: const InputDecoration(
-                  labelText: "Stasiun Tujuan",
-                  border: OutlineInputBorder(),
-                ),
-                items: stationController.stations
-                    .map((station) => DropdownMenuItem<String>(
-                          value: station["id"].toString(),
-                          child: Text(station["name"]),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  setState(() => selectedTujuan = value);
-                },
-              ),
-              const SizedBox(height: 16),
-              // Tanggal
-              InkWell(
-                onTap: () => _selectDate(context),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: "Tanggal Berangkat",
-                    border: OutlineInputBorder(),
+              Icon(icon, color: Colors.blueAccent),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  selectedStation == null
+                      ? hint
+                      : "${selectedStation['name']} (${selectedStation['code']})",
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: selectedStation == null ? Colors.grey : Colors.black87,
                   ),
-                  child: Text(
-                    selectedDate == null
-                        ? "Pilih tanggal"
-                        : "${selectedDate!.day}-${selectedDate!.month}-${selectedDate!.year}",
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Data Penumpang
-              Card(
-                elevation: 2,
-                child: ListTile(
-                  leading: const Icon(Icons.person, color: Colors.blue),
-                  title: Text(namaUser ?? ""),
-                  subtitle: Text(emailUser ?? ""),
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () {
-                  if (selectedAsal == null ||
-                      selectedTujuan == null ||
-                      selectedDate == null) {
-                    Get.snackbar("Error", "Lengkapi semua data terlebih dahulu");
-                    return;
-                  }
-                  print("Pesan tiket antar kota: "
-                      "Asal=$selectedAsal, Tujuan=$selectedTujuan, "
-                      "Tanggal=$selectedDate, User=$namaUser");
-                },
-                icon: const Icon(Icons.confirmation_num),
-                label: const Text("Pesan Tiket"),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
-          );
-        }),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Pesan Tiket Antar Kota"),
+        backgroundColor: Colors.blueAccent,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: ListView(
+          children: [
+            // Asal & Tujuan (side by side)
+            Row(
+              children: [
+                _buildStationSelector(
+                  label: "Stasiun Asal",
+                  hint: "Pilih Asal",
+                  icon: Icons.train,
+                  selectedStation: selectedAsal,
+                  onTap: () => _selectStation("Asal"),
+                ),
+                const SizedBox(width: 12),
+                _buildStationSelector(
+                  label: "Stasiun Tujuan",
+                  hint: "Pilih Tujuan",
+                  icon: Icons.flag,
+                  selectedStation: selectedTujuan,
+                  onTap: () => _selectStation("Tujuan"),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Tanggal keberangkatan
+            InkWell(
+              onTap: () => _selectDate(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade400),
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    )
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_today, color: Colors.blueAccent),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        selectedDate == null
+                            ? "Pilih Tanggal Keberangkatan"
+                            : "${selectedDate!.day}-${selectedDate!.month}-${selectedDate!.year}",
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: selectedDate == null ? Colors.grey : Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Data pengguna
+            Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Colors.blueAccent.withOpacity(0.2),
+                  child: const Icon(Icons.person, color: Colors.blue),
+                ),
+                title: Text(
+                  namaUser ?? "Guest",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Email: ${emailUser ?? ''}", style: const TextStyle(fontSize: 13)),
+                      Text("NIK: $nikUser", style: const TextStyle(fontSize: 13)),
+                      Text("No Telp: $noTelpUser", style: const TextStyle(fontSize: 13)),
+                      Text("Tanggal Lahir: $tanggalLahirUser", style: const TextStyle(fontSize: 13)),
+                      Text("Tanggal Lahir: $jeniskelamin", style: const TextStyle(fontSize: 13)),
+                      Text("id: $userId", style: const TextStyle(fontSize: 13)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Tombol Pesan
+            ElevatedButton.icon(
+              onPressed: () {
+                if (selectedAsal == null ||
+                    selectedTujuan == null ||
+                    selectedDate == null) {
+                  Get.snackbar("Error", "Lengkapi semua data terlebih dahulu");
+                  return;
+                }
+
+                Get.toNamed(
+                  AppRoutes.hasilpencarianAKpage,
+                  arguments: {
+                    "originId": selectedAsal!['id'],
+                    "destinationId": selectedTujuan!['id'],
+                    "departureDate": selectedDate!.toIso8601String().split("T")[0],
+                    "originName": selectedAsal!['name'],
+                    "destinationName": selectedTujuan!['name'],
+                    "originCode": selectedAsal!['code'],
+                    "destinationCode": selectedTujuan!['code'],
+                  },
+                );
+              },
+              icon: const Icon(Icons.search),
+              label: const Text("Cari Tiket"),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 55),
+                backgroundColor: Colors.blueAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 6,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

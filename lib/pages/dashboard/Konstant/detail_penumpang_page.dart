@@ -79,10 +79,10 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
     final isTambahan = tambahan;
     final namaPenumpang = isTambahan ? penumpang['nama'] : nama;
     final nikPenumpang = isTambahan ? penumpang['nik'] : nik;
-    final tglLahirPenumpang =
-        isTambahan ? penumpang['tanggal_lahir'] : tanggalLahir;
-    final jkPenumpang =
-        isTambahan ? penumpang['jenis_kelamin'] : jenisKelamin;
+    final tglLahirPenumpang = isTambahan
+        ? penumpang['tanggal_lahir']
+        : tanggalLahir;
+    final jkPenumpang = isTambahan ? penumpang['jenis_kelamin'] : jenisKelamin;
 
     final bool? confirm = await showDialog<bool>(
       context: context,
@@ -92,8 +92,10 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
           children: const [
             Icon(Icons.info_outline, color: Colors.blue),
             SizedBox(width: 8),
-            Text("Konfirmasi Data",
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              "Konfirmasi Data",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ],
         ),
         content: Column(
@@ -177,48 +179,56 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
     );
 
     if (confirm == true) {
-      final result = await Get.toNamed(
-        AppRoutes.pilihseats,
-        arguments: {
-          "nama": namaPenumpang,
-          "nik": nikPenumpang,
-          "tanggal_lahir": tglLahirPenumpang,
-          "jenis_kelamin": jkPenumpang,
-          "trainId": args["trainId"],
-          "tripId": args["tripId"],
-          "departureDate": args["departureDate"],
-          "takenSeats": [
-            if (seatUtama != null) seatUtama,
-            ...penumpangTambahan
-                .where((p) => p["seat"] != null)
-                .map((p) => p["seat"]),
-          ],
-        },
-      );
+  // cek tipe kereta dari args
+  final trainType = args["type"]?.toString().toLowerCase() ?? "";
 
-      print("🎯 Result diterima di DetailPenumpangPage: $result");
+  final routeName = trainType == "lokal"
+      ? AppRoutes.pilihseatslokal
+      : AppRoutes.pilihseatsantarkota;
 
-      if (result != null && result is Map) {
-        setState(() {
-          if (isTambahan && index != null) {
-            penumpangTambahan[index]["seat"] = result['seat'];
-            penumpangTambahan[index]["carriage"] = result['carriage'];
-            penumpangTambahan[index]["seat_id"] = result['seat_id'];
-          } else {
-            seatUtama = result['seat'];
-            carriageUtama = result['carriage'];
-            seatId = result['seat_id'];
-            bookingId = result['booking_id'];
-          }
-        });
+  final result = await Get.toNamed(
+    routeName,
+    arguments: {
+      "nama": namaPenumpang,
+      "nik": nikPenumpang,
+      "tanggal_lahir": tglLahirPenumpang,
+      "jenis_kelamin": jkPenumpang,
+      "trainId": args["trainId"],
+      "tripId": args["tripId"],
+      "departureDate": args["departureDate"],
+      "takenSeats": [
+        if (seatUtama != null) seatUtama,
+        ...penumpangTambahan
+            .where((p) => p["seat"] != null)
+            .map((p) => p["seat"]),
+      ],
+    },
+  );
 
-        Get.snackbar(
-          "Sukses",
-          "Kursi ${result['seat']} berhasil dipilih",
-          snackPosition: SnackPosition.BOTTOM,
-        );
+  print("🎯 Result diterima di DetailPenumpangPage: $result");
+
+  if (result != null && result is Map) {
+    setState(() {
+      if (isTambahan && index != null) {
+        penumpangTambahan[index]["seat"] = result['seat'];
+        penumpangTambahan[index]["carriage"] = result['carriage'];
+        penumpangTambahan[index]["seat_id"] = result['seat_id'];
+      } else {
+        seatUtama = result['seat'];
+        carriageUtama = result['carriage'];
+        seatId = result['seat_id'];
+        bookingId = result['booking_id'];
       }
-    }
+    });
+
+    Get.snackbar(
+      "Sukses",
+      "Kursi ${result['seat']} berhasil dipilih",
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+}
+
   }
 
   @override
@@ -246,9 +256,10 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text("Penumpang Utama",
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const Text(
+                  "Penumpang Utama",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
                 Card(
                   child: ListTile(
                     leading: const CircleAvatar(
@@ -293,12 +304,17 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.person,
-                                  color: Colors.blueAccent),
+                              const Icon(
+                                Icons.person,
+                                color: Colors.blueAccent,
+                              ),
                               const SizedBox(width: 8),
-                              Text("Penumpang Tambahan ${index + 1}",
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold)),
+                              Text(
+                                "Penumpang Tambahan ${index + 1}",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                           const Divider(),
@@ -321,29 +337,28 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
                           const SizedBox(height: 8),
                           Row(
                             children: [
-                              const Icon(Icons.male,
-                                  color: Colors.blueAccent),
+                              const Icon(Icons.male, color: Colors.blueAccent),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text("Jenis Kelamin",
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.w500)),
+                                    const Text(
+                                      "Jenis Kelamin",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                                     Row(
                                       children: [
                                         Expanded(
                                           child: RadioListTile<String>(
                                             title: const Text("Laki-laki"),
                                             value: "Laki-laki",
-                                            groupValue:
-                                                p["jenis_kelamin"],
+                                            groupValue: p["jenis_kelamin"],
                                             onChanged: (value) {
                                               setState(() {
-                                                p["jenis_kelamin"] =
-                                                    value!;
+                                                p["jenis_kelamin"] = value!;
                                               });
                                             },
                                           ),
@@ -352,12 +367,10 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
                                           child: RadioListTile<String>(
                                             title: const Text("Perempuan"),
                                             value: "Perempuan",
-                                            groupValue:
-                                                p["jenis_kelamin"],
+                                            groupValue: p["jenis_kelamin"],
                                             onChanged: (value) {
                                               setState(() {
-                                                p["jenis_kelamin"] =
-                                                    value!;
+                                                p["jenis_kelamin"] = value!;
                                               });
                                             },
                                           ),
@@ -403,8 +416,7 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
                           ),
                           const SizedBox(height: 12),
                           Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               TextButton.icon(
                                 onPressed: () {
@@ -412,10 +424,14 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
                                     penumpangTambahan.removeAt(index);
                                   });
                                 },
-                                icon: const Icon(Icons.delete,
-                                    color: Colors.red),
-                                label: const Text("Hapus",
-                                    style: TextStyle(color: Colors.red)),
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                label: const Text(
+                                  "Hapus",
+                                  style: TextStyle(color: Colors.red),
+                                ),
                               ),
                               ElevatedButton.icon(
                                 onPressed: () {
@@ -424,20 +440,20 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
                                     {
                                       "nama": p["nama"].text,
                                       "nik": p["nik"].text,
-                                      "trip_id":
-                                          args["tripId"].toString(),
+                                      "trip_id": args["tripId"].toString(),
                                       "departure_date": args["departureDate"]
                                           .toString(),
-                                      "tanggal_lahir":
-                                          p["tanggal_lahir"].text,
+                                      "tanggal_lahir": p["tanggal_lahir"].text,
                                       "jenis_kelamin": p["jenis_kelamin"],
                                     },
                                     tambahan: true,
                                     index: index,
                                   );
                                 },
-                                icon: const Icon(Icons.event_seat,
-                                    color: Colors.white),
+                                icon: const Icon(
+                                  Icons.event_seat,
+                                  color: Colors.white,
+                                ),
                                 label: const Text("Pilih Kursi"),
                               ),
                             ],
@@ -467,8 +483,10 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
                   minimumSize: const Size(double.infinity, 50),
                 ),
                 icon: const Icon(Icons.check, color: Colors.white),
-                label: const Text("Booking",
-                    style: TextStyle(color: Colors.white, fontSize: 16)),
+                label: const Text(
+                  "Booking",
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
                 onPressed: () {
                   final bookingCtrl = Get.put(BookingController());
                   final rawDate = args["departureDate"];
@@ -488,24 +506,19 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
                     return;
                   }
 
-                  final formattedDate =
-                      DateFormat('yyyy-MM-dd').format(DateTime.parse(
-                    rawDate.toString(),
-                  ));
+                  final formattedDate = DateFormat(
+                    'yyyy-MM-dd',
+                  ).format(DateTime.parse(rawDate.toString()));
 
                   final tambahan = penumpangTambahan.map((p) {
                     return {
-                      "name": p["nama"].text.isNotEmpty
-                          ? p["nama"].text
-                          : "-",
-                      "nik": p["nik"].text.isNotEmpty
-                          ? p["nik"].text
-                          : "-",
+                      "name": p["nama"].text.isNotEmpty ? p["nama"].text : "-",
+                      "nik": p["nik"].text.isNotEmpty ? p["nik"].text : "-",
                       "jenis_kelamin":
                           (p["jenis_kelamin"] == "Laki-laki" ||
-                                  p["jenis_kelamin"] == "Perempuan")
-                              ? p["jenis_kelamin"]
-                              : "Laki-laki",
+                              p["jenis_kelamin"] == "Perempuan")
+                          ? p["jenis_kelamin"]
+                          : "Laki-laki",
                       "tanggal_lahir": p["tanggal_lahir"].text.isNotEmpty
                           ? p["tanggal_lahir"].text
                           : formattedDate,
@@ -516,11 +529,10 @@ class _DetailPenumpangPageState extends State<DetailPenumpangPage> {
                   }).toList();
 
                   bookingCtrl.updateBookingStatusByUser(
-  1, // user_id dari SharedPreferences atau token login
-  int.parse(args["tripId"].toString()),
-  "CONFIRMED",
-);
-
+                    1, // user_id dari SharedPreferences atau token login
+                    int.parse(args["tripId"].toString()),
+                    "CONFIRMED",
+                  );
                 },
               ),
             ),

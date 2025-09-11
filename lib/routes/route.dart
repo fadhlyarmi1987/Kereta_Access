@@ -1,10 +1,11 @@
 import 'package:get/get.dart';
+import 'package:kereta_access/pages/dashboard/KeretaAntarKota/hasil_pencarian_AK_page.dart';
 import 'package:kereta_access/pages/dashboard/KeretaAntarKota/pesan_Antar_Kota.dart';
-import 'package:kereta_access/pages/dashboard/KeretaLokal/detail_penumpang_page.dart';
+import 'package:kereta_access/pages/dashboard/KeretaAntarKota/pilih_seats_AK_page.dart';
+import 'package:kereta_access/pages/dashboard/Konstant/detail_penumpang_page.dart';
 import 'package:kereta_access/pages/dashboard/KeretaLokal/hasil_pencarian_page.dart';
-import 'package:kereta_access/pages/dashboard/KeretaLokal/pilih_seats_page.dart';
-import 'package:kereta_access/pages/dashboard/KeretaLokal/pilih_stasiun_page.dart';
-//import 'package:kereta_access/pages/dashboard/KeretaLokal/keretalokal_page.dart';
+import 'package:kereta_access/pages/dashboard/KeretaLokal/pilih_seats_lokal_page.dart';
+import 'package:kereta_access/pages/dashboard/Konstant/pilih_stasiun_page.dart';
 import 'package:kereta_access/pages/dashboard/bottom_navbar.dart';
 import 'package:kereta_access/pages/dashboard/KeretaLokal/pesan_Lokal.dart';
 import '../pages/auth/login_page.dart';
@@ -18,7 +19,9 @@ class AppRoutes {
   static const pesanLokal = '/pesanlokal';
   static const pesanAnKot = '/pesanankot';
   static const hasilpencarianLokal = '/hasilpencarianLokal';
-  static const pilihseats = '/pilihseats';
+  static const hasilpencarianAKpage = '/hasilpencarianAK';
+  static const pilihseatslokal = '/pilihseatslokal';
+  static const pilihseatsantarkota = '/pilihseatsantarkota';
   static const detailpenumpang = '/detailpenumpang';
   static const pilihstasiun = '/pilihstasiun';
 
@@ -29,6 +32,9 @@ class AppRoutes {
     //GetPage(name: lokal, page: () => KeretaLokalPage()),
     GetPage(name: pesanLokal, page: () => PesanTiketPage()),
     GetPage(name: pesanAnKot, page: () => PesanTiketAntarKotaPage()),
+    GetPage(name: pilihseatslokal, page: () => PilihSeatsPage()),
+    GetPage(name: pilihseatsantarkota, page: () => PilihSeatsAntarKotaPage()),
+    GetPage(name: detailpenumpang, page: () => DetailPenumpangPage()),
     GetPage(
       name: hasilpencarianLokal,
       page: () {
@@ -42,8 +48,20 @@ class AppRoutes {
         );
       },
     ),
-    GetPage(name: pilihseats, page: () => PilihSeatsPage()),
-    GetPage(name: detailpenumpang, page: () => DetailPenumpangPage()),
+    GetPage(
+      name: hasilpencarianAKpage,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>;
+        return HasilPencarianAKPage(
+          originId: args["originId"],
+          destinationId: args["destinationId"],
+          departureDate: args["departureDate"],
+          originName: args["originName"],
+          destinationName: args["destinationName"],
+        );
+      },
+    ),
+
     GetPage(
       name: pilihstasiun,
       page: () {

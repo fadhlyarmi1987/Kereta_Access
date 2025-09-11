@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../constant/bottom_nav_items.dart';
 import 'dashboard_page.dart';
-import 'train_page.dart';
-import 'ticket_page.dart';
-import 'profile_page.dart';
+import '../train/train_page.dart';
+import 'ticket/ticket_page.dart';
+import 'profile/profile_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});

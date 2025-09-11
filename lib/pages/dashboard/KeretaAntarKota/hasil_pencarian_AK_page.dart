@@ -5,14 +5,14 @@ import 'package:http/http.dart' as http;
 import 'package:kereta_access/constant/api_constant.dart';
 import '../../../routes/route.dart';
 
-class HasilPencarianPage extends StatefulWidget {
+class HasilPencarianAKPage extends StatefulWidget {
   final String originId;
   final String destinationId;
   final String departureDate;
   final String originName;
   final String destinationName;
 
-  const HasilPencarianPage({
+  const HasilPencarianAKPage({
     super.key,
     required this.originId,
     required this.destinationId,
@@ -22,10 +22,10 @@ class HasilPencarianPage extends StatefulWidget {
   });
 
   @override
-  State<HasilPencarianPage> createState() => _HasilPencarianPageState();
+  State<HasilPencarianAKPage> createState() => _HasilPencarianAKPageState();
 }
 
-class _HasilPencarianPageState extends State<HasilPencarianPage> {
+class _HasilPencarianAKPageState extends State<HasilPencarianAKPage> {
   bool isLoading = true;
   List<dynamic> trips = [];
 
@@ -52,7 +52,7 @@ class _HasilPencarianPageState extends State<HasilPencarianPage> {
       final data = jsonDecode(response.body);
       setState(() {
         trips = data["data"].where((trip) {
-          return trip['train']['type'] == "lokal";
+          return trip['train']['type'] == "AK";
         }).toList();
         isLoading = false;
       });
